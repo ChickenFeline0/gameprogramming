@@ -3,6 +3,7 @@
 #include <random>
 #include <chrono>
 #include <cmath>
+#include <algorithm>
 using namespace std;
 
 
@@ -17,42 +18,47 @@ vector<int> generateRandomIntVector(int size, unsigned int seed = 0) {
     return result;
 }
 
-int customLinearFindInt(vector<int> &vec, int target) {
-    for (int i = 0; i < vec.size(); i++) {
-        if (vec[i] == target) {
-            return i;
+int customBinaryFind(vector<int> &vec, int target) {
+    int left = 0;
+    int right = vec.size() - 1;
+    while (left <= right) {
+        int mid = left + (right - left) / 2;
+        if (vec[mid] == target) {
+            return mid;
+        } else if (vec[mid] < target) {
+            left = mid + 1;
+        } else {
+            right = mid - 1;
         }
     }
     return -1;
 }
 
-void benchmarkCustomLinearInt(vector<int> &vec, int count) {
+void benchmarkCustomBinary(vector<int> &vec, int count, int size) {
     double totalTime = 0;
     int n = vec.size();
     for (int i = 0; i < count; i++) {
         int idx = rand() % n;
         int target = vec[idx];
         auto startTime = chrono::high_resolution_clock::now();
-        customLinearFindInt(vec, target);
+        customBinaryFind(vec, target);
         auto endTime = chrono::high_resolution_clock::now();
         totalTime += chrono::duration_cast<chrono::nanoseconds>(endTime - startTime).count();
     }
     double avgTime = totalTime / count;
-    cout << "Total time for " << count << " searches: " << totalTime / 1000000.0 << " ms" << endl;
-    cout << "Average time per search: " << avgTime / 1000000.0 << " ms for vector size " << n << endl;
+    // Output in CSV: size,totalTime(ms),averageTime(ms)
+    cout << size << "," << totalTime / 1000000.0 << "," << avgTime / 1000000.0 << endl;
 }
 
 
 int main() {
     int N = 28; // You can change N to generate more/less vectors
+    cout << "size,totalTime,averageTime" << endl;
     for (int i = 1; i <= N; ++i) {
         int size = pow(2, i);
-        auto genStart = chrono::high_resolution_clock::now();
         vector<int> randomVec = generateRandomIntVector(size);
-        auto genEnd = chrono::high_resolution_clock::now();
-        double genTime = chrono::duration_cast<chrono::nanoseconds>(genEnd - genStart).count() / 1000000.0;
-        cout << "Random vector of size 2^" << i << " (" << size << ") generated in " << genTime << " ms" << endl;
-        benchmarkCustomLinearInt(randomVec, 1000000);
+        sort(randomVec.begin(), randomVec.end());
+        benchmarkCustomBinary(randomVec, 1000000, size);
     }
     return 0;
 }
